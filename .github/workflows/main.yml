@@ -24,6 +24,7 @@ jobs:
           cache: maven
 
       - name: Build and Test with Maven
+        working-directory: java-assignment
         run: mvn -B clean verify
 
       - name: Upload Coverage Report
