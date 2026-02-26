@@ -231,56 +231,6 @@ public class WarehouseRepositoryTest {
         assertEquals(specialCode, result.businessUnitCode);
     }
 
-    // ==================== ARCHIVE Tests ====================
-//    @Test
-//    @Transactional
-//    void testArchiveSuccess() {
-//        Warehouse warehouse = new Warehouse();
-//        warehouse.businessUnitCode = testWarehouseCode;
-//        warehouse.location = testLocation;
-//        warehouse.capacity = 100;
-//        warehouse.stock = 50;
-//
-//        repository.create(warehouse);
-//
-//        repository.archive(testWarehouseCode);
-//
-//        Warehouse result = repository.findByBusinessUnitCode(testWarehouseCode);
-//        assertNotNull(result.archivedAt);
-//    }
-//
-//    @Test
-//    @Transactional
-//    void testArchiveNonexistentWarehouse() {
-//        assertThrows(IllegalArgumentException.class, () ->
-//            repository.archive("NONEXISTENT")
-//        );
-//    }
-//
-//    @Test
-//    @Transactional
-//    void testArchiveMultipleWarehouses() {
-//        for (int i = 0; i < 3; i++) {
-//            Warehouse warehouse = new Warehouse();
-//            warehouse.businessUnitCode = testWarehouseCode + "-" + i;
-//            warehouse.location = testLocation;
-//            warehouse.capacity = 100 + i;
-//            warehouse.stock = 50 + i;
-//            repository.create(warehouse);
-//        }
-//
-//        repository.archive(testWarehouseCode + "-0");
-//        repository.archive(testWarehouseCode + "-1");
-//
-//        Warehouse result0 = repository.findByBusinessUnitCode(testWarehouseCode + "-0");
-//        Warehouse result1 = repository.findByBusinessUnitCode(testWarehouseCode + "-1");
-//        Warehouse result2 = repository.findByBusinessUnitCode(testWarehouseCode + "-2");
-//
-//        assertNotNull(result0.archivedAt);
-//        assertNotNull(result1.archivedAt);
-//        assertNull(result2.archivedAt);
-//    }
-
     // ==================== INTEGRATION Tests ====================
     @Test
     @Transactional
@@ -307,30 +257,6 @@ public class WarehouseRepositoryTest {
         Warehouse updated = repository.findByBusinessUnitCode(testWarehouseCode);
         assertEquals(200, updated.capacity);
     }
-
-//    @Test
-//    @Transactional
-//    void testCreateReadArchiveFlow() {
-//        // Create
-//        Warehouse warehouse = new Warehouse();
-//        warehouse.businessUnitCode = testWarehouseCode;
-//        warehouse.location = testLocation;
-//        warehouse.capacity = 100;
-//        warehouse.stock = 50;
-//
-//        repository.create(warehouse);
-//
-//        // Read
-//        Warehouse created = repository.findByBusinessUnitCode(testWarehouseCode);
-//        assertNotNull(created);
-//
-//        // Archive
-//        repository.archive(testWarehouseCode);
-//
-//        // Verify archive
-//        Warehouse archived = repository.findByBusinessUnitCode(testWarehouseCode);
-//        assertNotNull(archived.archivedAt);
-//    }
 
     @Test
     @Transactional

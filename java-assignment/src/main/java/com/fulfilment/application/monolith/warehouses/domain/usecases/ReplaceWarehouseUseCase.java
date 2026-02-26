@@ -35,10 +35,6 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
               "Warehouse not found", 404);
     }
 
-//    if (!existing.stock.equals(newWarehouse.stock)) {
-//      throw new WebApplicationException(
-//              "Stock must match existing warehouse", 422);
-//    }
 
       if (existing.stock != null
               && newWarehouse.stock != null
@@ -47,11 +43,6 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
           throw new WebApplicationException(
                   "Stock must match existing warehouse", 422);
       }
-
-//    if (newWarehouse.capacity < existing.stock) {
-//      throw new WebApplicationException(
-//              "Capacity cannot accommodate stock", 422);
-//    }
 
       if (newWarehouse.capacity != null
               && existing.stock != null

@@ -75,6 +75,12 @@
                 <version>2.4.7</version>
             </dependency>
 
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jacoco</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -120,28 +126,38 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.11</version>
+
                 <executions>
-                    <!-- Prepare agent before tests -->
+
+                    <!-- Attach JaCoCo agent -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-                    <!-- Generate report after tests -->
+
+                    <!-- Generate report AFTER Quarkus tests -->
                     <execution>
                         <id>report</id>
-                        <phase>test</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <dataFile>${project.build.directory}/jacoco-quarkus.exec</dataFile>
+                        </configuration>
                     </execution>
+
+                    <!-- Coverage check -->
                     <execution>
                         <id>check</id>
+                        <phase>verify</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <dataFile>${project.build.directory}/jacoco-quarkus.exec</dataFile>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -149,13 +165,14 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.25</minimum> <!-- 80% coverage -->
+                                            <minimum>0.80</minimum> <!-- 80% -->
                                         </limit>
                                     </limits>
                                 </rule>
                             </rules>
                         </configuration>
                     </execution>
+
                 </executions>
             </plugin>
         </plugins>
