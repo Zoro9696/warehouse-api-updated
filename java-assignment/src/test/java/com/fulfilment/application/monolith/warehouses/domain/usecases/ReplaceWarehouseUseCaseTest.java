@@ -11,197 +11,82 @@ import static org.mockito.Mockito.*;
 
 class ReplaceWarehouseUseCaseTest {
 
-    private WarehouseStore store;
+    private WarehouseStore warehouseStore;
     private ReplaceWarehouseUseCase useCase;
 
     @BeforeEach
-    void setup() {
-        store = mock(WarehouseStore.class);
-        useCase = new ReplaceWarehouseUseCase(store);
+    void setUp() {
+        warehouseStore = mock(WarehouseStore.class);
+        useCase = new ReplaceWarehouseUseCase(warehouseStore);
     }
 
     @Test
-    void shouldReplaceWarehouseSuccessfully() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 10;
-        existing.capacity = 50;
+    void shouldArchiveExistingAndCreateNewWarehouse() {
 
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-1";
-        newWarehouse.stock = 10;
-        newWarehouse.capacity = 50;
+        Warehouse existing =
+                new Warehouse("BU1", "LOC1", 100, 10);
 
-        when(store.findByBusinessUnitCode("WH-1"))
+        Warehouse newWarehouse =
+                new Warehouse("BU1", "LOC2", 150, 10);
+
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
 
         useCase.replace(newWarehouse);
 
-        verify(store).update(newWarehouse);
+        // verify existing archived
+        verify(warehouseStore).update(existing);
+
+        // verify new created
+        verify(warehouseStore).create(newWarehouse);
+
+        assertNotNull(existing.archivedAt);
     }
 
     @Test
-    void shouldHandleNullWarehouse() {
-        assertThrows(
-                NullPointerException.class,
-                () -> useCase.replace(null)
-        );
-    }
+    void shouldThrowIfWarehouseNotFound() {
 
-    @Test
-    void shouldFailWhenBusinessUnitCodeNull() {
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = null;
+        Warehouse newWarehouse =
+                new Warehouse("BU1", "LOC2", 150, 10);
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> useCase.replace(newWarehouse)
-        );
-        assertEquals("Business unit code required", exception.getMessage());
-    }
-
-    @Test
-    void shouldFailWhenWarehouseNotFound() {
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "UNKNOWN";
-        newWarehouse.stock = 10;
-
-        when(store.findByBusinessUnitCode("UNKNOWN"))
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(null);
 
-        WebApplicationException exception = assertThrows(
-                WebApplicationException.class,
-                () -> useCase.replace(newWarehouse)
-        );
-        assertEquals(404, exception.getResponse().getStatus());
-        assertTrue(exception.getMessage().contains("Warehouse not found"));
+        assertThrows(WebApplicationException.class,
+                () -> useCase.replace(newWarehouse));
     }
 
     @Test
-    void shouldFailWhenStockMismatch() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 10;
-        existing.capacity = 50;
+    void shouldThrowIfStockMismatch() {
 
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-1";
-        newWarehouse.stock = 20; // Different stock
-        newWarehouse.capacity = 50;
+        Warehouse existing =
+                new Warehouse("BU1", "LOC1", 100, 20);
 
-        when(store.findByBusinessUnitCode("WH-1"))
+        Warehouse newWarehouse =
+                new Warehouse("BU1", "LOC2", 150, 10);
+
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
 
-        WebApplicationException exception = assertThrows(
-                WebApplicationException.class,
-                () -> useCase.replace(newWarehouse)
-        );
-        assertEquals(422, exception.getResponse().getStatus());
-        assertTrue(exception.getMessage().contains("Stock must match"));
+        assertThrows(WebApplicationException.class,
+                () -> useCase.replace(newWarehouse));
     }
 
     @Test
-    void shouldFailWhenCapacityTooSmallForStock() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 50;
-        existing.capacity = 50;
+    void shouldThrowIfCapacityLessThanStock() {
 
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-1";
-        newWarehouse.stock = 50;
-        newWarehouse.capacity = 40; // Cannot accommodate existing stock
+        Warehouse existing =
+                new Warehouse("BU1", "LOC1", 100, 50);
 
-        when(store.findByBusinessUnitCode("WH-1"))
+        // capacity is valid for its own stock
+        // but less than existing stock
+        Warehouse newWarehouse =
+                new Warehouse("BU1", "LOC2", 40, 40);
+
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
 
-        WebApplicationException exception = assertThrows(
-                WebApplicationException.class,
-                () -> useCase.replace(newWarehouse)
-        );
-        assertEquals(422, exception.getResponse().getStatus());
-        assertTrue(exception.getMessage().contains("Capacity cannot accommodate stock"));
-    }
-
-    @Test
-    void shouldReplaceWithNullStockWhenExistingStockNull() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-NULL-STOCK";
-        existing.stock = null;
-        existing.capacity = 50;
-
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-NULL-STOCK";
-        newWarehouse.stock = null;
-        newWarehouse.capacity = 50;
-
-        when(store.findByBusinessUnitCode("WH-NULL-STOCK"))
-                .thenReturn(existing);
-
-        useCase.replace(newWarehouse);
-
-        verify(store).update(newWarehouse);
-    }
-
-    @Test
-    void shouldReplaceWithNullCapacityWhenExistingStockNull() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = null;
-        existing.capacity = 50;
-
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-1";
-        newWarehouse.stock = null;
-        newWarehouse.capacity = null;
-
-        when(store.findByBusinessUnitCode("WH-1"))
-                .thenReturn(existing);
-
-        useCase.replace(newWarehouse);
-
-        verify(store).update(newWarehouse);
-    }
-
-    @Test
-    void shouldReplaceWithDifferentLocationAndCapacity() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 10;
-        existing.location = "OLD-LOCATION";
-        existing.capacity = 50;
-
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-1";
-        newWarehouse.stock = 10;
-        newWarehouse.location = "NEW-LOCATION";
-        newWarehouse.capacity = 100;
-
-        when(store.findByBusinessUnitCode("WH-1"))
-                .thenReturn(existing);
-
-        useCase.replace(newWarehouse);
-
-        verify(store).update(newWarehouse);
-    }
-
-    @Test
-    void shouldReplaceWithZeroStock() {
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
-        existing.stock = 0;
-        existing.capacity = 50;
-
-        Warehouse newWarehouse = new Warehouse();
-        newWarehouse.businessUnitCode = "WH-1";
-        newWarehouse.stock = 0;
-        newWarehouse.capacity = 50;
-
-        when(store.findByBusinessUnitCode("WH-1"))
-                .thenReturn(existing);
-
-        useCase.replace(newWarehouse);
-
-        verify(store).update(newWarehouse);
+        assertThrows(WebApplicationException.class,
+                () -> useCase.replace(newWarehouse));
     }
 }

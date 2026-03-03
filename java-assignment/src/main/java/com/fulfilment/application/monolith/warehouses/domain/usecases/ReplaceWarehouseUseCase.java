@@ -4,6 +4,7 @@ import com.fulfilment.application.monolith.warehouses.domain.models.Warehouse;
 import com.fulfilment.application.monolith.warehouses.domain.ports.ReplaceWarehouseOperation;
 import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStore;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 
 @ApplicationScoped
@@ -14,7 +15,7 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
   public ReplaceWarehouseUseCase(WarehouseStore warehouseStore) {
     this.warehouseStore = warehouseStore;
   }
-
+  @Transactional
   @Override
   public void replace(Warehouse newWarehouse) {
 
@@ -51,7 +52,9 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
           throw new WebApplicationException(
                   "Capacity cannot accommodate stock", 422);
       }
-
-    warehouseStore.update(newWarehouse);
+      existing.archive();
+      warehouseStore.update(existing);
+//    warehouseStore.update(newWarehouse);
+    warehouseStore.create(newWarehouse);
   }
 }
