@@ -5,102 +5,84 @@ import com.fulfilment.application.monolith.warehouses.domain.ports.WarehouseStor
 import jakarta.ws.rs.WebApplicationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ArchiveWarehouseUseCaseTest {
 
-    private WarehouseStore store;
-    private ArchiveWarehouseUseCase useCase;
+    @Mock
+    WarehouseStore warehouseStore;
+
+    ArchiveWarehouseUseCase useCase;
 
     @BeforeEach
-    void setup() {
-        store = mock(WarehouseStore.class);
-        useCase = new ArchiveWarehouseUseCase(store);
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        useCase = new ArchiveWarehouseUseCase(warehouseStore);
     }
 
     @Test
     void shouldArchiveWarehouseSuccessfully() {
-        Warehouse input = new Warehouse();
-        input.businessUnitCode = "WH-1";
 
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-1";
+        Warehouse existing =
+                new Warehouse("BU1", "Pune", 100, 50);
 
-        when(store.findByBusinessUnitCode("WH-1"))
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
 
-        useCase.archive(input);
+        useCase.archive(existing);
 
-        verify(store).remove(existing);
+        assertNotNull(existing.archivedAt);
+        verify(warehouseStore).update(existing);
     }
 
     @Test
-    void shouldHandleNullWarehouse() {
-        assertThrows(
-                NullPointerException.class,
-                () -> useCase.archive(null)
-        );
-    }
+    void shouldThrow404IfWarehouseNotFound() {
 
-    @Test
-    void shouldFailWhenWarehouseNotFound() {
-        Warehouse input = new Warehouse();
-        input.businessUnitCode = "UNKNOWN";
-
-        when(store.findByBusinessUnitCode("UNKNOWN"))
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(null);
 
-        WebApplicationException exception = assertThrows(
-                WebApplicationException.class,
-                () -> useCase.archive(input)
-        );
-        assertEquals(404, exception.getResponse().getStatus());
-        assertTrue(exception.getMessage().contains("Warehouse not found"));
+        Warehouse request =
+                new Warehouse("BU1", "Pune", 100, 50);
+
+        WebApplicationException ex =
+                assertThrows(WebApplicationException.class,
+                        () -> useCase.archive(request));
+
+        assertEquals(404, ex.getResponse().getStatus());
     }
 
     @Test
-    void shouldFailWhenBusinessUnitCodeIsNull() {
-        Warehouse input = new Warehouse();
-        input.businessUnitCode = null;
+    void shouldThrowIllegalStateIfAlreadyArchived() {
 
-        assertThrows(
-                NullPointerException.class,
-                () -> useCase.archive(input)
-        );
-    }
+        Warehouse existing =
+                new Warehouse("BU1", "Pune", 100, 50);
 
-    @Test
-    void shouldArchiveWarehouseWithArchivedDate() {
-        Warehouse input = new Warehouse();
-        input.businessUnitCode = "WH-ARCHIVE";
+        existing.archive();  // already archived
 
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-ARCHIVE";
-
-        when(store.findByBusinessUnitCode("WH-ARCHIVE"))
+        when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
 
-        useCase.archive(input);
-
-        verify(store).remove(existing);
+        assertThrows(IllegalStateException.class,
+                () -> useCase.archive(existing));
     }
 
     @Test
-    void shouldArchiveAlreadyArchivedWarehouse() {
-        Warehouse input = new Warehouse();
-        input.businessUnitCode = "WH-ALREADY-ARCHIVED";
+    void shouldThrow404IfBusinessUnitCodeIsNull() {
 
-        Warehouse existing = new Warehouse();
-        existing.businessUnitCode = "WH-ALREADY-ARCHIVED";
-        existing.archivedAt = java.time.LocalDateTime.now();
+        Warehouse request = new Warehouse();
+        request.businessUnitCode = null;
 
-        when(store.findByBusinessUnitCode("WH-ALREADY-ARCHIVED"))
-                .thenReturn(existing);
+        when(warehouseStore.findByBusinessUnitCode(null))
+                .thenReturn(null);
 
-        useCase.archive(input);
+        WebApplicationException ex =
+                assertThrows(WebApplicationException.class,
+                        () -> useCase.archive(request));
 
-        verify(store).remove(existing);
+        assertEquals(404, ex.getResponse().getStatus());
     }
 }

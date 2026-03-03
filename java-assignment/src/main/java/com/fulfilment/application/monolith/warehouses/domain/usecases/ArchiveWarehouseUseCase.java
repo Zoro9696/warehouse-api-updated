@@ -17,19 +17,17 @@ public class ArchiveWarehouseUseCase implements ArchiveWarehouseOperation {
 
   @Override
   public void archive(Warehouse warehouse) {
+
     Warehouse existing =
             warehouseStore.findByBusinessUnitCode(
                     warehouse.businessUnitCode);
 
-    if (warehouse.businessUnitCode == null) {
-      throw new NullPointerException("Business unit code required");
-    }
-
     if (existing == null) {
-      throw new WebApplicationException(
-              "Warehouse not found", 404);
+      throw new WebApplicationException("Warehouse not found", 404);
     }
 
-    warehouseStore.remove(existing);
+    existing.archive();   // Domain behavior
+    warehouseStore.update(existing);
   }
+
 }

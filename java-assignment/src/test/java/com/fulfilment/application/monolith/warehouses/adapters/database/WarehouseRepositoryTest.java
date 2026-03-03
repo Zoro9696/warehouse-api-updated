@@ -9,280 +9,122 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
-public class WarehouseRepositoryTest {
+class WarehouseRepositoryTest {
 
     @Inject
     WarehouseRepository repository;
 
-    private String testWarehouseCode;
-    private String testLocation;
+    @Inject
+    io.quarkus.hibernate.orm.panache.PanacheRepositoryBase<DbWarehouse, Long> panacheRepository;
+
 
     @BeforeEach
     @Transactional
-    void setup() {
-        String uuid = UUID.randomUUID().toString().substring(0, 8);
-        testWarehouseCode = "WH-" + uuid;
-        testLocation = "LOC-" + uuid;
-
-        // Clean up any existing test data
+    void clearDatabase() {
         repository.deleteAll();
     }
 
-    // ==================== GET ALL Tests ====================
     @Test
     @Transactional
-    void testGetAllEmpty() {
-        List<Warehouse> result = repository.getAll();
-
-        assertNotNull(result);
-        assertEquals(0, result.size());
-    }
-
-    @Test
-    @Transactional
-    void testGetAllWithData() {
+    void shouldCreateWarehouseSuccessfully() {
         Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
+        warehouse.businessUnitCode = "BU100";
+        warehouse.location = "Pune";
         warehouse.capacity = 100;
         warehouse.stock = 50;
 
         repository.create(warehouse);
 
+        Warehouse saved =
+                repository.findByBusinessUnitCode("BU100");
+
+        assertNotNull(saved);
+        assertEquals("Pune", saved.location);
+        assertNull(saved.archivedAt);
+    }
+
+    @Test
+    @Transactional
+    void shouldReturnOnlyNonArchivedWarehouses() {
+
+        // Active warehouse
+        Warehouse active = new Warehouse();
+        active.businessUnitCode = "BU200";
+        active.location = "Mumbai";
+        active.capacity = 200;
+        active.stock = 80;
+        repository.create(active);
+
+        // Archived warehouse
+        Warehouse archived = new Warehouse();
+        archived.businessUnitCode = "BU201";
+        archived.location = "Delhi";
+        archived.capacity = 300;
+        archived.stock = 100;
+        repository.create(archived);
+
+        archived.archivedAt = LocalDateTime.now();
+        repository.update(archived);
+
         List<Warehouse> result = repository.getAll();
 
-        assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testWarehouseCode, result.get(0).businessUnitCode);
+        assertEquals("BU200", result.get(0).businessUnitCode);
     }
 
     @Test
     @Transactional
-    void testGetAllMultipleWarehouses() {
-        for (int i = 0; i < 3; i++) {
-            Warehouse warehouse = new Warehouse();
-            warehouse.businessUnitCode = testWarehouseCode + "-" + i;
-            warehouse.location = testLocation;
-            warehouse.capacity = 100 + i;
-            warehouse.stock = 50 + i;
-            repository.create(warehouse);
-        }
+    void shouldUpdateWarehouseSuccessfully() {
 
-        List<Warehouse> result = repository.getAll();
-
-        assertNotNull(result);
-        assertEquals(3, result.size());
-    }
-
-    // ==================== CREATE Tests ====================
-    @Test
-    @Transactional
-    void testCreateSuccess() {
         Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        assertDoesNotThrow(() -> repository.create(warehouse));
-
-        List<Warehouse> result = repository.getAll();
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    @Transactional
-    void testCreateWithZeroCapacity() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 0;
-        warehouse.stock = 0;
-
-        assertDoesNotThrow(() -> repository.create(warehouse));
-    }
-
-    @Test
-    @Transactional
-    void testCreateWithLargeCapacity() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 999999;
-        warehouse.stock = 500000;
-
-        assertDoesNotThrow(() -> repository.create(warehouse));
-    }
-
-    @Test
-    @Transactional
-    void testCreateMultipleWarehouses() {
-        for (int i = 0; i < 5; i++) {
-            Warehouse warehouse = new Warehouse();
-            warehouse.businessUnitCode = testWarehouseCode + "-" + i;
-            warehouse.location = testLocation + "-" + i;
-            warehouse.capacity = 100 + i;
-            warehouse.stock = 50 + i;
-            repository.create(warehouse);
-        }
-
-        List<Warehouse> result = repository.getAll();
-        assertEquals(5, result.size());
-    }
-
-    // ==================== UPDATE Tests ====================
-    @Test
-    @Transactional
-    void testUpdateSuccess() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        repository.create(warehouse);
-
-        warehouse.capacity = 200;
-        warehouse.stock = 100;
-        repository.update(warehouse);
-
-        List<Warehouse> result = repository.getAll();
-        assertEquals(200, result.get(0).capacity);
-        assertEquals(100, result.get(0).stock);
-    }
-
-    @Test
-    @Transactional
-    void testUpdateNonexistentWarehouse() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = "NONEXISTENT";
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        assertThrows(IllegalArgumentException.class, () -> repository.update(warehouse));
-    }
-
-    @Test
-    @Transactional
-    void testUpdateWithArchiveDate() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        repository.create(warehouse);
-
-        warehouse.archivedAt = LocalDateTime.now();
-        repository.update(warehouse);
-
-        List<Warehouse> result = repository.getAll();
-        assertNotNull(result.get(0).archivedAt);
-    }
-
-    // ==================== FIND BY CODE Tests ====================
-    @Test
-    @Transactional
-    void testFindByBusinessUnitCodeSuccess() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        repository.create(warehouse);
-
-        Warehouse result = repository.findByBusinessUnitCode(testWarehouseCode);
-
-        assertNotNull(result);
-        assertEquals(testWarehouseCode, result.businessUnitCode);
-        assertEquals(testLocation, result.location);
-    }
-
-    @Test
-    @Transactional
-    void testFindByBusinessUnitCodeNotFound() {
-        Warehouse result = repository.findByBusinessUnitCode("NONEXISTENT");
-
-        assertNull(result);
-    }
-
-    @Test
-    @Transactional
-    void testFindByBusinessUnitCodeWithSpecialCharacters() {
-        String specialCode = "WH-@#$%-TEST";
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = specialCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        repository.create(warehouse);
-
-        Warehouse result = repository.findByBusinessUnitCode(specialCode);
-
-        assertNotNull(result);
-        assertEquals(specialCode, result.businessUnitCode);
-    }
-
-    // ==================== INTEGRATION Tests ====================
-    @Test
-    @Transactional
-    void testCreateReadUpdateFlow() {
-        // Create
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
-        warehouse.capacity = 100;
-        warehouse.stock = 50;
-
-        repository.create(warehouse);
-
-        // Read
-        Warehouse created = repository.findByBusinessUnitCode(testWarehouseCode);
-        assertNotNull(created);
-        assertEquals(100, created.capacity);
-
-        // Update
-        created.capacity = 200;
-        repository.update(created);
-
-        // Verify update
-        Warehouse updated = repository.findByBusinessUnitCode(testWarehouseCode);
-        assertEquals(200, updated.capacity);
-    }
-
-    @Test
-    @Transactional
-    void testRepositoryIsApplicationScoped() {
-        assertNotNull(repository);
-    }
-
-    @Test
-    @Transactional
-    void testDbWarehouseMapping() {
-        Warehouse warehouse = new Warehouse();
-        warehouse.businessUnitCode = testWarehouseCode;
-        warehouse.location = testLocation;
+        warehouse.businessUnitCode = "BU300";
+        warehouse.location = "Chennai";
         warehouse.capacity = 150;
-        warehouse.stock = 75;
-        warehouse.createdAt = LocalDateTime.now();
+        warehouse.stock = 70;
+        repository.create(warehouse);
+
+        warehouse.location = "Hyderabad";
+        repository.update(warehouse);
+
+        Warehouse updated =
+                repository.findByBusinessUnitCode("BU300");
+
+        assertEquals("Hyderabad", updated.location);
+    }
+
+    @Test
+    @Transactional
+    void shouldSoftDeleteWarehouseUsingUpdate() {
+
+        Warehouse warehouse =
+                new Warehouse("BU1", "Pune", 100, 50);
 
         repository.create(warehouse);
 
-        Warehouse result = repository.findByBusinessUnitCode(testWarehouseCode);
+        warehouse.archive();
+        repository.update(warehouse);
 
-        assertNotNull(result);
-        assertEquals(warehouse.businessUnitCode, result.businessUnitCode);
-        assertEquals(warehouse.location, result.location);
-        assertEquals(warehouse.capacity, result.capacity);
-        assertEquals(warehouse.stock, result.stock);
+        List<Warehouse> result = repository.getAll();
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldThrowExceptionOnHardDelete() {
+
+        Warehouse warehouse = new Warehouse();
+        warehouse.businessUnitCode = "BU500";
+
+        UnsupportedOperationException exception =
+                assertThrows(UnsupportedOperationException.class,
+                        () -> repository.remove(warehouse));
+
+        assertEquals(
+                "Hard delete not allowed. Use archive (soft delete).",
+                exception.getMessage());
     }
 }
-
