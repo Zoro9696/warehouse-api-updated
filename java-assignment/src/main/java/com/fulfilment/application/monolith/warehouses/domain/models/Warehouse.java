@@ -11,15 +11,16 @@ public class Warehouse {
 
   public LocalDateTime createdAt;
   public LocalDateTime archivedAt;
+  public Long id;
 
-  public Warehouse() {
+    public Warehouse() {
     // required for mapping
   }
 
   public Warehouse(String businessUnitCode,
                    String location,
                    Integer capacity,
-                   Integer stock) {
+                   Integer stock,Long id) {
 
     validateBusinessUnitCode(businessUnitCode);
     validateCapacity(capacity);
@@ -30,6 +31,7 @@ public class Warehouse {
     this.capacity = capacity;
     this.stock = stock;
     this.createdAt = LocalDateTime.now();
+    this.id = id;
   }
 
   public void archive() {

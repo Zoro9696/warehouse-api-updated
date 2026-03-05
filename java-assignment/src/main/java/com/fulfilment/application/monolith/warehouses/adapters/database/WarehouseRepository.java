@@ -73,4 +73,15 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
 
     return entity == null ? null : entity.toWarehouse();
   }
+
+
+    public Warehouse findActiveById(Long id) {
+
+        DbWarehouse entity =
+                find("id = ?1 and archivedAt is null", id)
+                        .firstResult();
+
+        return entity == null ? null : entity.toWarehouse();
+    }
+
 }

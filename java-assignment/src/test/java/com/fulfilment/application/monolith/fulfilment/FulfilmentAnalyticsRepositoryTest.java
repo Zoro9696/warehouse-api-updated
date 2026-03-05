@@ -1,4 +1,4 @@
-package com.fulfilment.application.monolith.fulfillment;
+package com.fulfilment.application.monolith.fulfilment;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,10 +8,10 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-class FulfillmentAnalyticsRepositoryTest {
+class FulfilmentAnalyticsRepositoryTest {
 
     @Inject
-    FulfillmentAnalyticsRepository repository;
+    FulfilmentAnalyticsRepository repository;
 
     @Test
     void testCountAssociationsForStore() {

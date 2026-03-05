@@ -101,7 +101,7 @@ class WarehouseRepositoryTest {
     void shouldSoftDeleteWarehouseUsingUpdate() {
 
         Warehouse warehouse =
-                new Warehouse("BU1", "Pune", 100, 50);
+                new Warehouse("BU1", "Pune", 100, 50 , 1l);
 
         repository.create(warehouse);
 

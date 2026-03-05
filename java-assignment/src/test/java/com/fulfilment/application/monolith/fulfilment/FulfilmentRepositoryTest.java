@@ -1,4 +1,4 @@
-package com.fulfilment.application.monolith.fulfillment;
+package com.fulfilment.application.monolith.fulfilment;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -6,6 +6,7 @@ import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
 import org.junit.jupiter.api.Test;
 
 import com.fulfilment.application.monolith.products.Product;
@@ -14,17 +15,20 @@ import com.fulfilment.application.monolith.stores.Store;
 import java.util.List;
 
 @QuarkusTest
-class FulfillmentRepositoryTest {
+class FulfilmentRepositoryTest {
 
     @Inject
-    FulfillmentRepository repository;
+    FulfilmentRepository repository;
 
     @Test
     @Transactional
     void testFindByProductAndStore() {
 
-        Product product = Product.findById(1L);
-        Store store = Store.findById(1L);
+        Product product = new Product();
+        product.persist();
+
+        Store store = new Store();
+        store.persist();
 
         List<ProductWarehouseStoreAssociation> result =
                 repository.findByProductAndStore(product, store);
@@ -36,7 +40,8 @@ class FulfillmentRepositoryTest {
     @Transactional
     void testFindByStore() {
 
-        Store store = Store.findById(1L);
+        Store store = new Store();
+        store.persist();
 
         List<ProductWarehouseStoreAssociation> result =
                 repository.findByStore(store);
@@ -48,8 +53,19 @@ class FulfillmentRepositoryTest {
     @Transactional
     void testFindByWarehouse() {
 
+        Product product = new Product();
+        product.persist();
+
+        Store store = new Store();
+        store.persist();
+
+        ProductWarehouseStoreAssociation association =
+                new ProductWarehouseStoreAssociation(product, 1L, store);
+
+        repository.persist(association);
+
         List<ProductWarehouseStoreAssociation> result =
-                repository.findByWarehouse("MWH.001");
+                repository.findByWarehouse(1L);
 
         assertNotNull(result);
     }
@@ -58,10 +74,14 @@ class FulfillmentRepositoryTest {
     @Transactional
     void testCountWarehousesForProductInStore() {
 
-        Product product = Product.findById(1L);
-        Store store = Store.findById(1L);
+        Product product = new Product();
+        product.persist();
 
-        long count = repository.countWarehousesForProductInStore(product, store);
+        Store store = new Store();
+        store.persist();
+
+        long count =
+                repository.countWarehousesForProductInStore(product, store);
 
         assertTrue(count >= 0);
     }
@@ -70,9 +90,11 @@ class FulfillmentRepositoryTest {
     @Transactional
     void testCountWarehousesForStore() {
 
-        Store store = Store.findById(1L);
+        Store store = new Store();
+        store.persist();
 
-        long count = repository.countWarehousesForStore(store);
+        long count =
+                repository.countWarehousesForStore(store);
 
         assertTrue(count >= 0);
     }
@@ -81,7 +103,8 @@ class FulfillmentRepositoryTest {
     @Transactional
     void testCountProductTypesInWarehouse() {
 
-        long count = repository.countProductTypesInWarehouse("MWH.001");
+        long count =
+                repository.countProductTypesInWarehouse(1L);
 
         assertTrue(count >= 0);
     }
@@ -90,11 +113,14 @@ class FulfillmentRepositoryTest {
     @Transactional
     void testExists_WhenFalse() {
 
-        Product product = Product.findById(1L);
-        Store store = Store.findById(1L);
+        Product product = new Product();
+        product.persist();
+
+        Store store = new Store();
+        store.persist();
 
         boolean exists =
-                repository.exists(product, "NON_EXISTING", store);
+                repository.exists(product, 999L, store);
 
         assertFalse(exists);
     }
@@ -103,20 +129,19 @@ class FulfillmentRepositoryTest {
     @TestTransaction
     void testExists_WhenTrue_AfterInsert() {
 
-        Product product = Product.findById(1L);
-        Store store = Store.findById(1L);
+        Product product = new Product();
+        product.persist();
+
+        Store store = new Store();
+        store.persist();
 
         ProductWarehouseStoreAssociation association =
-                new ProductWarehouseStoreAssociation();
-
-        association.product = product;
-        association.store = store;
-        association.warehouseBusinessUnitCode = "TEST_WH";
+                new ProductWarehouseStoreAssociation(product, 5L, store);
 
         repository.persist(association);
 
         boolean exists =
-                repository.exists(product, "TEST_WH", store);
+                repository.exists(product, 5L, store);
 
         assertTrue(exists);
     }

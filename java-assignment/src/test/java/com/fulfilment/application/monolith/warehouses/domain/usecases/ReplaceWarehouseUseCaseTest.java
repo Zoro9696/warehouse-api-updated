@@ -24,10 +24,10 @@ class ReplaceWarehouseUseCaseTest {
     void shouldArchiveExistingAndCreateNewWarehouse() {
 
         Warehouse existing =
-                new Warehouse("BU1", "LOC1", 100, 10);
+                new Warehouse("BU1", "LOC1", 100, 10,1L);
 
         Warehouse newWarehouse =
-                new Warehouse("BU1", "LOC2", 150, 10);
+                new Warehouse("BU1", "LOC2", 150, 10,1L);
 
         when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
@@ -47,7 +47,7 @@ class ReplaceWarehouseUseCaseTest {
     void shouldThrowIfWarehouseNotFound() {
 
         Warehouse newWarehouse =
-                new Warehouse("BU1", "LOC2", 150, 10);
+                new Warehouse("BU1", "LOC2", 150, 10,1L);
 
         when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(null);
@@ -60,10 +60,10 @@ class ReplaceWarehouseUseCaseTest {
     void shouldThrowIfStockMismatch() {
 
         Warehouse existing =
-                new Warehouse("BU1", "LOC1", 100, 20);
+                new Warehouse("BU1", "LOC1", 100, 20 , 1L);
 
         Warehouse newWarehouse =
-                new Warehouse("BU1", "LOC2", 150, 10);
+                new Warehouse("BU1", "LOC2", 150, 10 ,1L);
 
         when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
@@ -76,12 +76,12 @@ class ReplaceWarehouseUseCaseTest {
     void shouldThrowIfCapacityLessThanStock() {
 
         Warehouse existing =
-                new Warehouse("BU1", "LOC1", 100, 50);
+                new Warehouse("BU1", "LOC1", 100, 50,1L);
 
         // capacity is valid for its own stock
         // but less than existing stock
         Warehouse newWarehouse =
-                new Warehouse("BU1", "LOC2", 40, 40);
+                new Warehouse("BU1", "LOC2", 40, 40,1L);
 
         when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);

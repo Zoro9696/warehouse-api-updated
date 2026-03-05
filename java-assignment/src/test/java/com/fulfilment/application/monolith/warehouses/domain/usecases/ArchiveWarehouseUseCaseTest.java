@@ -28,7 +28,7 @@ class ArchiveWarehouseUseCaseTest {
     void shouldArchiveWarehouseSuccessfully() {
 
         Warehouse existing =
-                new Warehouse("BU1", "Pune", 100, 50);
+                new Warehouse("BU1", "Pune", 100, 50 ,1l);
 
         when(warehouseStore.findByBusinessUnitCode("BU1"))
                 .thenReturn(existing);
@@ -46,7 +46,7 @@ class ArchiveWarehouseUseCaseTest {
                 .thenReturn(null);
 
         Warehouse request =
-                new Warehouse("BU1", "Pune", 100, 50);
+                new Warehouse("BU1", "Pune", 100, 50,1l);
 
         WebApplicationException ex =
                 assertThrows(WebApplicationException.class,
@@ -59,7 +59,7 @@ class ArchiveWarehouseUseCaseTest {
     void shouldThrowIllegalStateIfAlreadyArchived() {
 
         Warehouse existing =
-                new Warehouse("BU1", "Pune", 100, 50);
+                new Warehouse("BU1", "Pune", 100, 50,1l);
 
         existing.archive();  // already archived
 
